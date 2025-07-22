@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import * as pdfjsLib from "pdfjs-dist";
 
-// Set up PDF.js worker
+// Set up PDF.js worker for local development
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/build/pdf.worker.min.js",
   import.meta.url,
