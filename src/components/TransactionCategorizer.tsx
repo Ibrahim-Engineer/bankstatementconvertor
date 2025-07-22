@@ -31,7 +31,9 @@ interface Transaction {
 
 interface TransactionCategorizerProps {
   transactions?: Transaction[];
+  data?: any;
   onCategoriesChange?: (transactions: Transaction[]) => void;
+  onComplete?: (data: any) => void;
 }
 
 const categories = [
@@ -51,78 +53,214 @@ const categories = [
 
 const TransactionCategorizer: React.FC<TransactionCategorizerProps> = ({
   transactions: initialTransactions = [],
+  data = null,
   onCategoriesChange = () => {},
+  onComplete = () => {},
 }) => {
-  const [transactions, setTransactions] = useState<Transaction[]>(
-    initialTransactions.length > 0
-      ? initialTransactions
-      : [
-          {
-            id: "1",
-            date: "2023-05-01",
-            description: "Payroll Deposit",
-            amount: 3500,
-            category: "Salary",
-            type: "income",
-          },
-          {
-            id: "2",
-            date: "2023-05-02",
-            description: "Supermarket",
-            amount: -120.45,
-            category: "Groceries",
-            type: "expense",
-          },
-          {
-            id: "3",
-            date: "2023-05-03",
-            description: "Monthly Rent",
-            amount: -1200,
-            category: "Rent",
-            type: "expense",
-          },
-          {
-            id: "4",
-            date: "2023-05-05",
-            description: "Electric Bill",
-            amount: -85.2,
-            category: "Utilities",
-            type: "expense",
-          },
-          {
-            id: "5",
-            date: "2023-05-08",
-            description: "Gas Station",
-            amount: -45.75,
-            category: "Transportation",
-            type: "expense",
-          },
-          {
-            id: "6",
-            date: "2023-05-10",
-            description: "Movie Theater",
-            amount: -32.5,
-            category: "Entertainment",
-            type: "expense",
-          },
-          {
-            id: "7",
-            date: "2023-05-15",
-            description: "Bonus Payment",
-            amount: 500,
-            category: "Salary",
-            type: "income",
-          },
-          {
-            id: "8",
-            date: "2023-05-18",
-            description: "Restaurant Dinner",
-            amount: -78.9,
-            category: "Dining",
-            type: "expense",
-          },
-        ],
-  );
+  // Auto-categorization logic
+  const categorizeTransaction = (
+    description: string,
+    amount: number,
+  ): string => {
+    const desc = description.toLowerCase();
+
+    // Income patterns
+    if (amount > 0) {
+      if (
+        desc.includes("payroll") ||
+        desc.includes("salary") ||
+        desc.includes("deposit")
+      ) {
+        return "Salary";
+      }
+      return "Other";
+    }
+
+    // Expense patterns
+    if (
+      desc.includes("grocery") ||
+      desc.includes("supermarket") ||
+      desc.includes("food")
+    ) {
+      return "Groceries";
+    }
+    if (desc.includes("rent") || desc.includes("mortgage")) {
+      return "Rent";
+    }
+    if (
+      desc.includes("utility") ||
+      desc.includes("electric") ||
+      desc.includes("gas") ||
+      desc.includes("water")
+    ) {
+      return "Utilities";
+    }
+    if (
+      desc.includes("gas station") ||
+      desc.includes("fuel") ||
+      desc.includes("transport")
+    ) {
+      return "Transportation";
+    }
+    if (
+      desc.includes("restaurant") ||
+      desc.includes("dining") ||
+      desc.includes("cafe")
+    ) {
+      return "Dining";
+    }
+    if (
+      desc.includes("movie") ||
+      desc.includes("theater") ||
+      desc.includes("entertainment")
+    ) {
+      return "Entertainment";
+    }
+    if (
+      desc.includes("shop") ||
+      desc.includes("store") ||
+      desc.includes("mall")
+    ) {
+      return "Shopping";
+    }
+    if (
+      desc.includes("hospital") ||
+      desc.includes("doctor") ||
+      desc.includes("medical")
+    ) {
+      return "Healthcare";
+    }
+    if (
+      desc.includes("school") ||
+      desc.includes("university") ||
+      desc.includes("education")
+    ) {
+      return "Education";
+    }
+    if (
+      desc.includes("hotel") ||
+      desc.includes("flight") ||
+      desc.includes("travel")
+    ) {
+      return "Travel";
+    }
+
+    return "Other";
+  };
+
+  // Normalize date format
+  const normalizeDate = (dateStr: string): string => {
+    try {
+      // Handle various date formats
+      const date = new Date(dateStr.replace(/[\/-]/g, "/"));
+      if (isNaN(date.getTime())) {
+        return dateStr; // Return original if can't parse
+      }
+      return date.toISOString().split("T")[0]; // Return YYYY-MM-DD format
+    } catch {
+      return dateStr;
+    }
+  };
+
+  // Process incoming data and auto-categorize
+  const processTransactions = (incomingTransactions: any[]): Transaction[] => {
+    return incomingTransactions.map((transaction, index) => ({
+      id: transaction.id || `trans_${index}`,
+      date: normalizeDate(transaction.date),
+      description: transaction.description.trim(),
+      amount:
+        typeof transaction.amount === "string"
+          ? parseFloat(transaction.amount.replace(/[\$,]/g, ""))
+          : transaction.amount,
+      category: categorizeTransaction(
+        transaction.description,
+        typeof transaction.amount === "string"
+          ? parseFloat(transaction.amount.replace(/[\$,]/g, ""))
+          : transaction.amount,
+      ),
+      type:
+        (typeof transaction.amount === "string"
+          ? parseFloat(transaction.amount.replace(/[\$,]/g, ""))
+          : transaction.amount) >= 0
+          ? "income"
+          : "expense",
+    }));
+  };
+  const [transactions, setTransactions] = useState<Transaction[]>(() => {
+    if (data && data.selectedTransactions) {
+      return processTransactions(data.selectedTransactions);
+    }
+    if (initialTransactions.length > 0) {
+      return initialTransactions;
+    }
+    // Default mock data
+    return [
+      {
+        id: "1",
+        date: "2023-05-01",
+        description: "Payroll Deposit",
+        amount: 3500,
+        category: "Salary",
+        type: "income",
+      },
+      {
+        id: "2",
+        date: "2023-05-02",
+        description: "Supermarket",
+        amount: -120.45,
+        category: "Groceries",
+        type: "expense",
+      },
+      {
+        id: "3",
+        date: "2023-05-03",
+        description: "Monthly Rent",
+        amount: -1200,
+        category: "Rent",
+        type: "expense",
+      },
+      {
+        id: "4",
+        date: "2023-05-05",
+        description: "Electric Bill",
+        amount: -85.2,
+        category: "Utilities",
+        type: "expense",
+      },
+      {
+        id: "5",
+        date: "2023-05-08",
+        description: "Gas Station",
+        amount: -45.75,
+        category: "Transportation",
+        type: "expense",
+      },
+      {
+        id: "6",
+        date: "2023-05-10",
+        description: "Movie Theater",
+        amount: -32.5,
+        category: "Entertainment",
+        type: "expense",
+      },
+      {
+        id: "7",
+        date: "2023-05-15",
+        description: "Bonus Payment",
+        amount: 500,
+        category: "Salary",
+        type: "income",
+      },
+      {
+        id: "8",
+        date: "2023-05-18",
+        description: "Restaurant Dinner",
+        amount: -78.9,
+        category: "Dining",
+        type: "expense",
+      },
+    ];
+  });
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
@@ -411,12 +549,28 @@ const TransactionCategorizer: React.FC<TransactionCategorizerProps> = ({
             </div>
           </div>
 
-          {/* Save Button */}
-          <div className="mt-6 flex justify-end">
-            <Button className="flex items-center gap-2">
-              <Save className="h-4 w-4" />
-              Save Categories
-            </Button>
+          {/* Action Buttons */}
+          <div className="mt-6 flex justify-between">
+            <div className="text-sm text-muted-foreground">
+              {data && (
+                <span>
+                  Processed {transactions.length} transactions from {data.pages}{" "}
+                  pages
+                </span>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex items-center gap-2">
+                <Save className="h-4 w-4" />
+                Save Categories
+              </Button>
+              <Button
+                className="flex items-center gap-2"
+                onClick={() => onComplete({ transactions, summary })}
+              >
+                Continue to Export
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

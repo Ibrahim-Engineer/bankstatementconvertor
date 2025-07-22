@@ -24,6 +24,7 @@ import { Separator } from "@/components/ui/separator";
 interface ExportOptionsProps {
   onExport?: (options: ExportSettings) => void;
   isProcessing?: boolean;
+  data?: any;
 }
 
 interface ExportSettings {
@@ -36,6 +37,7 @@ interface ExportSettings {
 const ExportOptions = ({
   onExport = () => {},
   isProcessing = false,
+  data = null,
 }: ExportOptionsProps) => {
   const [settings, setSettings] = useState<ExportSettings>({
     template: "standard",
@@ -52,6 +54,43 @@ const ExportOptions = ({
   };
 
   const handleExport = () => {
+    // Generate Excel file with actual data
+    const exportData = {
+      settings,
+      transactions: data?.transactions || [],
+      summary: data?.summary || {},
+      timestamp: new Date().toISOString(),
+    };
+
+    // In a real implementation, you would use a library like xlsx to generate the Excel file
+    console.log("Exporting data:", exportData);
+
+    // Create a simple CSV for demonstration
+    if (data?.transactions) {
+      const csvContent = [
+        ["Date", "Description", "Amount", "Category", "Type"],
+        ...data.transactions.map((t: any) => [
+          t.date,
+          t.description,
+          t.amount,
+          t.category,
+          t.type,
+        ]),
+      ]
+        .map((row) => row.join(","))
+        .join("\n");
+
+      const blob = new Blob([csvContent], { type: "text/csv" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `bank_statement_${new Date().toISOString().split("T")[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    }
+
     onExport(settings);
   };
 

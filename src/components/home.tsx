@@ -36,61 +36,16 @@ const Home = () => {
 
   const handleFileUpload = (file: File) => {
     setUploadedFile(file);
-    // In a real app, we would process the file here
-    // For now, we'll just move to the next step
     setCurrentStep(1);
-
-    // Mock preview data
-    setPreviewData({
-      pages: 3,
-      tables: [
-        { page: 1, rows: 15, columns: 5 },
-        { page: 2, rows: 20, columns: 5 },
-      ],
-    });
   };
 
   const handlePreviewComplete = (data: any) => {
-    // In a real app, this would be the processed data from the preview
-    setCategorizedData({
-      transactions: [
-        {
-          date: "2023-05-01",
-          description: "Grocery Store",
-          amount: -120.5,
-          category: "Groceries",
-        },
-        {
-          date: "2023-05-02",
-          description: "Salary Deposit",
-          amount: 3500.0,
-          category: "Income",
-        },
-        {
-          date: "2023-05-03",
-          description: "Restaurant Payment",
-          amount: -85.75,
-          category: "Dining",
-        },
-        {
-          date: "2023-05-05",
-          description: "Utility Bill",
-          amount: -150.0,
-          category: "Utilities",
-        },
-        {
-          date: "2023-05-10",
-          description: "Online Shopping",
-          amount: -65.99,
-          category: "Shopping",
-        },
-      ],
-    });
+    setPreviewData(data);
     setCurrentStep(2);
   };
 
   const handleCategorizationComplete = (data: any) => {
-    // In a real app, this would update the categorized data
+    setCategorizedData(data);
     setCurrentStep(3);
   };
 
@@ -119,12 +74,17 @@ const Home = () => {
       case 2:
         return (
           <TransactionCategorizer
-            data={categorizedData}
+            data={previewData}
             onComplete={handleCategorizationComplete}
           />
         );
       case 3:
-        return <ExportOptions onExport={handleExportComplete} />;
+        return (
+          <ExportOptions
+            onExport={handleExportComplete}
+            data={categorizedData}
+          />
+        );
       default:
         return <FileUploader onFileUpload={handleFileUpload} />;
     }
